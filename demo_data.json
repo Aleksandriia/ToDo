@@ -1,0 +1,38 @@
+[
+  {
+    "id": 140492443993872,
+    "title": "Изучить Python",
+    "description": "Пройти базовый курс по Python",
+    "due_date": null,
+    "reminder_time": null,
+    "completed": true,
+    "created_at": "2026-01-25T19:01:06.777414"
+  },
+  {
+    "id": 140492444750320,
+    "title": "Купить продукты",
+    "description": "Молоко, хлеб, яйца",
+    "due_date": "2026-01-26T19:01:06.777438",
+    "reminder_time": null,
+    "completed": false,
+    "created_at": "2026-01-25T19:01:06.777453"
+  },
+  {
+    "id": 140492444754064,
+    "title": "Встреча с другом",
+    "description": "Обсудить совместный проект",
+    "due_date": null,
+    "reminder_time": "2026-01-25T20:01:06.777460",
+    "completed": false,
+    "created_at": "2026-01-25T19:01:06.777464"
+  },
+  {
+    "id": 140492444754304,
+    "title": "Подготовить презентацию",
+    "description": "Создать слайды для встречи",
+    "due_date": "2026-01-27T19:01:06.777469",
+    "reminder_time": "2026-01-26T19:01:06.777471",
+    "completed": false,
+    "created_at": "2026-01-25T19:01:06.777473"
+  }
+]
