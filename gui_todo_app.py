@@ -294,7 +294,7 @@ class TaskDialog(simpledialog.Dialog):
     def body(self, master):
         """Создание тела диалогового окна"""
         # Установка фиксированного размера окна (уменьшенная высота)
-        self.geometry("600x350")
+        self.geometry("600x200")
         self.resizable(False, False)
         
         # Настройка стиля для выделенного текста (голубой цвет как в списке задач)
