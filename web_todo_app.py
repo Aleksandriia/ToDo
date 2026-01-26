@@ -101,12 +101,14 @@ def check_reminders():
                 except ValueError:
                     pass
     
-    # Отмечаем найденные напоминания как выполненные
-    for task in triggered_reminders:
-        task['completed'] = True
+    # Не отмечаем напоминания как выполненные
+    # for task in triggered_reminders:
+    #     task['completed'] = True
     
     if triggered_reminders:
-        save_tasks(tasks)
+        # Сохраняем только если мы хотим отметить как выполненные (не в данном случае)
+        # save_tasks(tasks)
+        pass
     
     return jsonify({
         'reminders': triggered_reminders,
