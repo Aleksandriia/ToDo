@@ -302,12 +302,16 @@ class TaskDialog(simpledialog.Dialog):
         master.option_add("*selectBackground", "#add8e6")
         master.option_add("*selectForeground", "black")
         
-        # Также устанавливаем стили для конкретных виджетов, чтобы гарантировать эффект
+        # Создаем стиль для ttk.Entry
+        style = ttk.Style()
+        style.configure("Custom.TEntry", fieldbackground="white", selectbackground="#add8e6", selectforeground="black")
+        
+        # Сохраняем ссылку на родительский элемент для дальнейшего применения стилей
         self.parent = master
         
         # Поля ввода
         ttk.Label(master, text="Название:").grid(row=0, column=0, sticky=tk.W, pady=2)
-        self.title_entry = ttk.Entry(master, width=50)
+        self.title_entry = ttk.Entry(master, width=50, style="Custom.TEntry")
         self.title_entry.grid(row=0, column=1, pady=2, padx=(10, 0), sticky="ew")
         
         ttk.Label(master, text="Описание:").grid(row=1, column=0, sticky=tk.W, pady=2)
@@ -334,7 +338,7 @@ class TaskDialog(simpledialog.Dialog):
             self.due_date_picker.pack(fill=tk.X, pady=(0, 5))
             
             ttk.Label(datetime_frame_due, text="Время (ЧЧ:ММ):").pack(anchor=tk.W)
-            self.due_time_entry = ttk.Entry(datetime_frame_due, width=10)
+            self.due_time_entry = ttk.Entry(datetime_frame_due, width=10, style="Custom.TEntry")
             self.due_time_entry.pack(fill=tk.X)
             
             # Для напоминания
@@ -347,16 +351,16 @@ class TaskDialog(simpledialog.Dialog):
             self.reminder_date_picker.pack(fill=tk.X, pady=(0, 5))
             
             ttk.Label(datetime_frame_reminder, text="Время (ЧЧ:ММ):").pack(anchor=tk.W)
-            self.reminder_time_entry = ttk.Entry(datetime_frame_reminder, width=10)
+            self.reminder_time_entry = ttk.Entry(datetime_frame_reminder, width=10, style="Custom.TEntry")
             self.reminder_time_entry.pack(fill=tk.X)
         else:
             # Используем старый способ ввода даты вручную
             ttk.Label(master, text="Выполнить до (дд.мм.гггг чч:мм):").grid(row=2, column=0, sticky=tk.W, pady=2)
-            self.due_entry = ttk.Entry(master, width=50)
+            self.due_entry = ttk.Entry(master, width=50, style="Custom.TEntry")
             self.due_entry.grid(row=2, column=1, pady=2, padx=(10, 0), sticky="ew")
             
             ttk.Label(master, text="Напомнить (дд.мм.гггг чч:мм):").grid(row=3, column=0, sticky=tk.W, pady=2)
-            self.reminder_entry = ttk.Entry(master, width=50)
+            self.reminder_entry = ttk.Entry(master, width=50, style="Custom.TEntry")
             self.reminder_entry.grid(row=3, column=1, pady=2, padx=(10, 0), sticky="ew")
         
         # Настройка веса для растягивания
@@ -583,6 +587,9 @@ class TaskDialog(simpledialog.Dialog):
                 # Применяем стиль для виджетов с возможностью выделения текста
                 if isinstance(widget, (tk.Text, tk.Entry, tk.Listbox)):
                     widget.config(selectbackground="#add8e6", selectforeground="black")
+                elif isinstance(widget, ttk.Entry):
+                    # Для ttk.Entry применяем предопределенный стиль
+                    widget.configure(style="Custom.TEntry")
                 elif isinstance(widget, tk.Frame) or isinstance(widget, tk.Toplevel):
                     # Рекурсивно применяем к дочерним виджетам
                     for child in widget.winfo_children():
