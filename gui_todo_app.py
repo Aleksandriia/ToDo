@@ -4,6 +4,11 @@ import json
 import os
 from datetime import datetime, timedelta
 import uuid
+try:
+    from tkcalendar import DateEntry
+except ImportError:
+    # Если tkcalendar не установлен, будем использовать простые поля ввода
+    DateEntry = None
 
 
 class TodoApp:
@@ -37,17 +42,23 @@ class TodoApp:
         
         for task in self.tasks:
             if task['reminder_time'] and not task['completed']:
-                # Преобразуем строку даты в объект datetime
+                # Проверяем, было ли уже показано уведомление для этой задачи
+                if task.get('reminder_shown', False):
+                    continue  # Пропускаем, если уже показывали уведомление
+                
+                # Пытаемся распознать формат даты
                 try:
                     reminder_dt = datetime.fromisoformat(task['reminder_time'].replace('Z', '+00:00'))
                     if reminder_dt <= now:
                         triggered_reminders.append(task)
+                        task['reminder_shown'] = True  # Отмечаем, что уведомление было показано
                 except ValueError:
                     try:
-                        # Попробуем другой формат даты
+                        # Пробуем другой формат даты
                         reminder_dt = datetime.strptime(task['reminder_time'], '%d.%m.%Y %H:%M')
                         if reminder_dt <= now:
                             triggered_reminders.append(task)
+                            task['reminder_shown'] = True  # Отмечаем, что уведомление было показано
                     except ValueError:
                         pass
         
@@ -57,7 +68,8 @@ class TodoApp:
         
         if triggered_reminders:
             self.save_data()
-            self.refresh_task_list()
+            # Обновляем интерфейс, чтобы отобразить изменения
+            self.root.after(0, self.refresh_task_list)
         
         # Запланировать следующую проверку через 1 минуту
         self.root.after(60000, self.check_reminders)
@@ -273,13 +285,43 @@ class TaskDialog(simpledialog.Dialog):
         self.desc_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         desc_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        ttk.Label(master, text="Выполнить до (дд.мм.гггг чч:мм):").grid(row=2, column=0, sticky=tk.W, pady=2)
-        self.due_entry = ttk.Entry(master, width=50)
-        self.due_entry.grid(row=2, column=1, pady=2, padx=(10, 0), sticky="ew")
-        
-        ttk.Label(master, text="Напомнить (дд.мм.гггг чч:мм):").grid(row=3, column=0, sticky=tk.W, pady=2)
-        self.reminder_entry = ttk.Entry(master, width=50)
-        self.reminder_entry.grid(row=3, column=1, pady=2, padx=(10, 0), sticky="ew")
+        # Добавляем поля для выбора даты и времени (с проверкой доступности DateEntry)
+        if DateEntry is not None:
+            # Используем календарь и поля ввода времени
+            ttk.Label(master, text="Выполнить до:").grid(row=2, column=0, sticky=tk.W, pady=2)
+            datetime_frame_due = ttk.Frame(master)
+            datetime_frame_due.grid(row=2, column=1, pady=2, padx=(10, 0), sticky="ew")
+            
+            # Для даты выполнения
+            ttk.Label(datetime_frame_due, text="Дата:").pack(anchor=tk.W)
+            self.due_date_picker = DateEntry(datetime_frame_due, width=12, background='darkblue', foreground='white', borderwidth=2)
+            self.due_date_picker.pack(fill=tk.X, pady=(0, 5))
+            
+            ttk.Label(datetime_frame_due, text="Время (ЧЧ:ММ):").pack(anchor=tk.W)
+            self.due_time_entry = ttk.Entry(datetime_frame_due, width=10)
+            self.due_time_entry.pack(fill=tk.X)
+            
+            # Для напоминания
+            ttk.Label(master, text="Напомнить:").grid(row=3, column=0, sticky=tk.W, pady=2)
+            datetime_frame_reminder = ttk.Frame(master)
+            datetime_frame_reminder.grid(row=3, column=1, pady=2, padx=(10, 0), sticky="ew")
+            
+            ttk.Label(datetime_frame_reminder, text="Дата:").pack(anchor=tk.W)
+            self.reminder_date_picker = DateEntry(datetime_frame_reminder, width=12, background='darkblue', foreground='white', borderwidth=2)
+            self.reminder_date_picker.pack(fill=tk.X, pady=(0, 5))
+            
+            ttk.Label(datetime_frame_reminder, text="Время (ЧЧ:ММ):").pack(anchor=tk.W)
+            self.reminder_time_entry = ttk.Entry(datetime_frame_reminder, width=10)
+            self.reminder_time_entry.pack(fill=tk.X)
+        else:
+            # Используем старый способ ввода даты вручную
+            ttk.Label(master, text="Выполнить до (дд.мм.гггг чч:мм):").grid(row=2, column=0, sticky=tk.W, pady=2)
+            self.due_entry = ttk.Entry(master, width=50)
+            self.due_entry.grid(row=2, column=1, pady=2, padx=(10, 0), sticky="ew")
+            
+            ttk.Label(master, text="Напомнить (дд.мм.гггг чч:мм):").grid(row=3, column=0, sticky=tk.W, pady=2)
+            self.reminder_entry = ttk.Entry(master, width=50)
+            self.reminder_entry.grid(row=3, column=1, pady=2, padx=(10, 0), sticky="ew")
         
         # Настройка веса для растягивания
         master.columnconfigure(1, weight=1)
@@ -289,10 +331,43 @@ class TaskDialog(simpledialog.Dialog):
         if self.task:
             self.title_entry.insert(0, self.task['title'])
             self.desc_text.insert(tk.END, self.task['description'])
-            if self.task['due_date']:
-                self.due_entry.insert(0, self.task['due_date'])
-            if self.task['reminder_time']:
-                self.reminder_entry.insert(0, self.task['reminder_time'])
+            
+            if DateEntry is not None:
+                # Заполняем поля с календарем
+                if self.task['due_date']:
+                    # Парсим дату из строки в формат dd.mm.yyyy HH:MM
+                    try:
+                        dt = datetime.strptime(self.task['due_date'], '%d.%m.%Y %H:%M')
+                        self.due_date_picker.set_date(dt.date())
+                        self.due_time_entry.insert(0, dt.strftime('%H:%M'))
+                    except ValueError:
+                        try:
+                            # Пробуем ISO формат
+                            dt = datetime.fromisoformat(self.task['due_date'].replace('Z', '+00:00'))
+                            self.due_date_picker.set_date(dt.date())
+                            self.due_time_entry.insert(0, dt.strftime('%H:%M'))
+                        except ValueError:
+                            pass
+                
+                if self.task['reminder_time']:
+                    try:
+                        dt = datetime.strptime(self.task['reminder_time'], '%d.%m.%Y %H:%M')
+                        self.reminder_date_picker.set_date(dt.date())
+                        self.reminder_time_entry.insert(0, dt.strftime('%H:%M'))
+                    except ValueError:
+                        try:
+                            # Пробуем ISO формат
+                            dt = datetime.fromisoformat(self.task['reminder_time'].replace('Z', '+00:00'))
+                            self.reminder_date_picker.set_date(dt.date())
+                            self.reminder_time_entry.insert(0, dt.strftime('%H:%M'))
+                        except ValueError:
+                            pass
+            else:
+                # Заполняем старые поля ввода
+                if self.task['due_date']:
+                    self.due_entry.insert(0, self.task['due_date'])
+                if self.task['reminder_time']:
+                    self.reminder_entry.insert(0, self.task['reminder_time'])
         
         return self.title_entry  # фокус на первое поле
     
@@ -303,31 +378,64 @@ class TaskDialog(simpledialog.Dialog):
             messagebox.showerror("Ошибка", "Название задачи не может быть пустым")
             return False
             
-        # Проверяем формат дат, если они введены
-        due_date = self.due_entry.get().strip()
-        reminder_time = self.reminder_entry.get().strip()
-        
-        if due_date:
-            try:
-                datetime.strptime(due_date, '%d.%m.%Y %H:%M')
-            except ValueError:
+        if DateEntry is not None:
+            # Проверяем формат времени, если введены даты
+            due_date_val = self.due_date_picker.get() if hasattr(self, 'due_date_picker') else ""
+            due_time_val = self.due_time_entry.get().strip() if hasattr(self, 'due_time_entry') else ""
+            reminder_date_val = self.reminder_date_picker.get() if hasattr(self, 'reminder_date_picker') else ""
+            reminder_time_val = self.reminder_time_entry.get().strip() if hasattr(self, 'reminder_time_entry') else ""
+            
+            # Формируем полные даты
+            due_datetime_str = f"{due_date_val} {due_time_val}" if due_date_val and due_time_val else ""
+            reminder_datetime_str = f"{reminder_date_val} {reminder_time_val}" if reminder_date_val and reminder_time_val else ""
+            
+            if due_datetime_str:
                 try:
-                    # Пробуем ISO формат
-                    datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                    datetime.strptime(due_datetime_str, '%m/%d/%Y %H:%M')
                 except ValueError:
-                    messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_date}. Используйте формат дд.мм.гггг чч:мм")
-                    return False
-                    
-        if reminder_time:
-            try:
-                datetime.strptime(reminder_time, '%d.%m.%Y %H:%M')
-            except ValueError:
+                    try:
+                        # Пробуем другой формат даты
+                        datetime.strptime(due_datetime_str, '%d.%m.%Y %H:%M')
+                    except ValueError:
+                        messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
+                        return False
+                        
+            if reminder_datetime_str:
                 try:
-                    # Пробуем ISO формат
-                    datetime.fromisoformat(reminder_time.replace('Z', '+00:00'))
+                    datetime.strptime(reminder_datetime_str, '%m/%d/%Y %H:%M')
                 except ValueError:
-                    messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_time}. Используйте формат дд.мм.гггг чч:мм")
-                    return False
+                    try:
+                        # Пробуем другой формат даты
+                        datetime.strptime(reminder_datetime_str, '%d.%m.%Y %H:%M')
+                    except ValueError:
+                        messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
+                        return False
+        else:
+            # Проверяем формат дат, если они введены (старый способ)
+            due_date = self.due_entry.get().strip()
+            reminder_time = self.reminder_entry.get().strip()
+            
+            if due_date:
+                try:
+                    datetime.strptime(due_date, '%d.%m.%Y %H:%M')
+                except ValueError:
+                    try:
+                        # Пробуем ISO формат
+                        datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                    except ValueError:
+                        messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_date}. Используйте формат дд.мм.гггг чч:мм")
+                        return False
+                        
+            if reminder_time:
+                try:
+                    datetime.strptime(reminder_time, '%d.%m.%Y %H:%M')
+                except ValueError:
+                    try:
+                        # Пробуем ISO формат
+                        datetime.fromisoformat(reminder_time.replace('Z', '+00:00'))
+                    except ValueError:
+                        messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_time}. Используйте формат дд.мм.гггг чч:мм")
+                        return False
         
         return True
     
@@ -336,8 +444,20 @@ class TaskDialog(simpledialog.Dialog):
         # Получаем значения из полей
         title = self.title_entry.get().strip()
         description = self.desc_text.get("1.0", tk.END).strip()
-        due_date = self.due_entry.get().strip() if self.due_entry.get().strip() else None
-        reminder_time = self.reminder_entry.get().strip() if self.reminder_entry.get().strip() else None
+        
+        if DateEntry is not None:
+            # Формируем даты из новых полей
+            due_date_val = self.due_date_picker.get() if hasattr(self, 'due_date_picker') else ""
+            due_time_val = self.due_time_entry.get().strip() if hasattr(self, 'due_time_entry') else ""
+            reminder_date_val = self.reminder_date_picker.get() if hasattr(self, 'reminder_date_picker') else ""
+            reminder_time_val = self.reminder_time_entry.get().strip() if hasattr(self, 'reminder_time_entry') else ""
+            
+            due_date = f"{due_date_val} {due_time_val}" if due_date_val and due_time_val else None
+            reminder_time = f"{reminder_date_val} {reminder_time_val}" if reminder_date_val and reminder_time_val else None
+        else:
+            # Получаем значения из старых полей
+            due_date = self.due_entry.get().strip() if self.due_entry.get().strip() else None
+            reminder_time = self.reminder_entry.get().strip() if self.reminder_entry.get().strip() else None
         
         # Если это редактирование, сохраняем ID и статус выполнения
         if self.task:

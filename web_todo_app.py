@@ -90,25 +90,21 @@ def check_reminders():
             try:
                 # Попробуем преобразовать дату из строки в datetime
                 reminder_dt = datetime.fromisoformat(task['reminder_time'].replace('Z', '+00:00'))
-                if reminder_dt <= now:
+                if reminder_dt <= now and not task.get('reminder_triggered', False):
                     triggered_reminders.append(task)
+                    task['reminder_triggered'] = True  # Отмечаем, что напоминание уже сработало
             except ValueError:
                 try:
                     # Попробуем другой формат даты
                     reminder_dt = datetime.strptime(task['reminder_time'], '%d.%m.%Y %H:%M')
-                    if reminder_dt <= now:
+                    if reminder_dt <= now and not task.get('reminder_triggered', False):
                         triggered_reminders.append(task)
+                        task['reminder_triggered'] = True  # Отмечаем, что напоминание уже сработало
                 except ValueError:
                     pass
     
-    # Не отмечаем напоминания как выполненные
-    # for task in triggered_reminders:
-    #     task['completed'] = True
-    
     if triggered_reminders:
-        # Сохраняем только если мы хотим отметить как выполненные (не в данном случае)
-        # save_tasks(tasks)
-        pass
+        save_tasks(tasks)  # Сохраняем изменения, чтобы зафиксировать срабатывание напоминаний
     
     return jsonify({
         'reminders': triggered_reminders,
