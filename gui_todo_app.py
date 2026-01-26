@@ -298,8 +298,12 @@ class TaskDialog(simpledialog.Dialog):
         self.resizable(False, False)
         
         # Настройка стиля для выделенного текста (голубой цвет как в списке задач)
+        # Применяем к родительскому окну и всем его потомкам
         master.option_add("*selectBackground", "#add8e6")
         master.option_add("*selectForeground", "black")
+        
+        # Также устанавливаем стили для конкретных виджетов, чтобы гарантировать эффект
+        self.parent = master
         
         # Поля ввода
         ttk.Label(master, text="Название:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -358,6 +362,9 @@ class TaskDialog(simpledialog.Dialog):
         # Настройка веса для растягивания
         master.columnconfigure(1, weight=1)
         master.rowconfigure(1, weight=1)
+        
+        # Применяем стили выделения ко всем виджетам после их создания
+        self.apply_selection_style()
         
         # Заполнение полей если задача передана
         if self.task:
@@ -430,8 +437,12 @@ class TaskDialog(simpledialog.Dialog):
                         # Пробуем формат мм/дд/гггг чч:мм от DateEntry
                         datetime.strptime(due_datetime_str, '%m/%d/%Y %H:%M')
                     except ValueError:
-                        messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
-                        return False
+                        # Пробуем формат мм/дд/гггг чч:мм без времени
+                        try:
+                            datetime.strptime(due_date_val, '%m/%d/%Y')
+                        except ValueError:
+                            messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
+                            return False
                         
             if reminder_datetime_str:
                 try:
@@ -442,8 +453,12 @@ class TaskDialog(simpledialog.Dialog):
                         # Пробуем формат мм/дд/гггг чч:мм от DateEntry
                         datetime.strptime(reminder_datetime_str, '%m/%d/%Y %H:%M')
                     except ValueError:
-                        messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
-                        return False
+                        # Пробуем формат мм/дд/гггг чч:мм без времени
+                        try:
+                            datetime.strptime(reminder_date_val, '%m/%d/%Y')
+                        except ValueError:
+                            messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
+                            return False
         else:
             # Проверяем формат дат, если они введены (старый способ)
             due_date = self.due_entry.get().strip()
@@ -492,7 +507,22 @@ class TaskDialog(simpledialog.Dialog):
                     dt = datetime.strptime(due_date_val, '%m/%d/%Y')
                     due_date = f"{dt.strftime('%d.%m.%Y')} {due_time_val}"
                 except ValueError:
-                    due_date = f"{due_date_val} {due_time_val}"  # Оставить как есть в случае ошибки
+                    # Если формат не MM/DD/YYYY, пробуем DD.MM.YYYY
+                    try:
+                        dt = datetime.strptime(due_date_val, '%d.%m.%Y')
+                        due_date = f"{dt.strftime('%d.%m.%Y')} {due_time_val}"
+                    except ValueError:
+                        due_date = f"{due_date_val} {due_time_val}"  # Оставить как есть в случае ошибки
+            elif due_date_val:  # Только дата без времени
+                try:
+                    dt = datetime.strptime(due_date_val, '%m/%d/%Y')
+                    due_date = dt.strftime('%d.%m.%Y')
+                except ValueError:
+                    try:
+                        dt = datetime.strptime(due_date_val, '%d.%m.%Y')
+                        due_date = dt.strftime('%d.%m.%Y')
+                    except ValueError:
+                        due_date = due_date_val  # Оставить как есть в случае ошибки
             else:
                 due_date = None
             
@@ -501,7 +531,22 @@ class TaskDialog(simpledialog.Dialog):
                     dt = datetime.strptime(reminder_date_val, '%m/%d/%Y')
                     reminder_time = f"{dt.strftime('%d.%m.%Y')} {reminder_time_val}"
                 except ValueError:
-                    reminder_time = f"{reminder_date_val} {reminder_time_val}"  # Оставить как есть в случае ошибки
+                    # Если формат не MM/DD/YYYY, пробуем DD.MM.YYYY
+                    try:
+                        dt = datetime.strptime(reminder_date_val, '%d.%m.%Y')
+                        reminder_time = f"{dt.strftime('%d.%m.%Y')} {reminder_time_val}"
+                    except ValueError:
+                        reminder_time = f"{reminder_date_val} {reminder_time_val}"  # Оставить как есть в случае ошибки
+            elif reminder_date_val:  # Только дата без времени
+                try:
+                    dt = datetime.strptime(reminder_date_val, '%m/%d/%Y')
+                    reminder_time = dt.strftime('%d.%m.%Y')
+                except ValueError:
+                    try:
+                        dt = datetime.strptime(reminder_date_val, '%d.%m.%Y')
+                        reminder_time = dt.strftime('%d.%m.%Y')
+                    except ValueError:
+                        reminder_time = reminder_date_val  # Оставить как есть в случае ошибки
             else:
                 reminder_time = None
         else:
@@ -529,6 +574,25 @@ class TaskDialog(simpledialog.Dialog):
                 'reminder_time': reminder_time,
                 'completed': False
             }
+
+    def apply_selection_style(self):
+        """Применение стиля выделения текста ко всем виджетам ввода"""
+        # Рекурсивная функция для применения стиля ко всем виджетам
+        def configure_widget(widget):
+            try:
+                # Применяем стиль для виджетов с возможностью выделения текста
+                if isinstance(widget, (tk.Text, tk.Entry, tk.Listbox)):
+                    widget.config(selectbackground="#add8e6", selectforeground="black")
+                elif isinstance(widget, tk.Frame) or isinstance(widget, tk.Toplevel):
+                    # Рекурсивно применяем к дочерним виджетам
+                    for child in widget.winfo_children():
+                        configure_widget(child)
+            except tk.TclError:
+                # Некоторые виджеты могут не поддерживать эти параметры
+                pass
+
+        # Применяем стиль ко всем виджетам начиная с родительского
+        configure_widget(self.parent)
 
 
 def main():
