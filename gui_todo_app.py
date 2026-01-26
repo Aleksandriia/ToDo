@@ -103,6 +103,12 @@ class TodoApp:
     
     def create_widgets(self):
         """Создание виджетов интерфейса"""
+        # Настройка стиля для TreeView
+        style = ttk.Style()
+        style.map("Treeview", 
+                  background=[('selected', '#add8e6')],  # Голубой цвет для выделения
+                  foreground=[('selected', 'black')])   # Черный цвет текста для выделения
+        
         # Верхняя часть - кнопки управления
         top_frame = ttk.Frame(self.root)
         top_frame.pack(pady=10, padx=10, fill=tk.X)
@@ -267,8 +273,30 @@ class TaskDialog(simpledialog.Dialog):
         super().__init__(parent, title)
         self.result = None
     
+    def buttonbox(self):
+        """Создание кнопок диалогового окна с измененным текстом"""
+        box = ttk.Frame(self)
+        
+        w = ttk.Button(box, text="Сохранить", width=10, command=self.ok, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = ttk.Button(box, text="Отмена", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+        
+        box.pack()
+    
+    def initial_focus_set(self):
+        """Установка фокуса на первое поле ввода"""
+        self.title_entry.focus_set()
+    
     def body(self, master):
         """Создание тела диалогового окна"""
+        # Установка фиксированного размера окна
+        self.geometry("600x400")
+        self.resizable(False, False)  # Запрет изменения размера
+        
         # Поля ввода
         ttk.Label(master, text="Название:").grid(row=0, column=0, sticky=tk.W, pady=2)
         self.title_entry = ttk.Entry(master, width=50)
