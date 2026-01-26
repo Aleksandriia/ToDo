@@ -294,7 +294,7 @@ class TaskDialog(simpledialog.Dialog):
     def body(self, master):
         """Создание тела диалогового окна"""
         # Установка фиксированного размера окна
-        self.geometry("600x400")
+        self.geometry("600x200")
         self.resizable(False, False)  # Запрет изменения размера
         
         # Поля ввода
