@@ -293,9 +293,13 @@ class TaskDialog(simpledialog.Dialog):
     
     def body(self, master):
         """Создание тела диалогового окна"""
-        # Установка фиксированного размера окна
-        self.geometry("600x400")
-        self.resizable(False, False)  # Запрет изменения размера
+        # Установка фиксированного размера окна (уменьшенная высота)
+        self.geometry("600x350")
+        self.resizable(False, False)
+        
+        # Настройка стиля для выделенного текста (голубой цвет как в списке задач)
+        master.option_add("*selectBackground", "#add8e6")
+        master.option_add("*selectForeground", "black")
         
         # Поля ввода
         ttk.Label(master, text="Название:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -419,22 +423,24 @@ class TaskDialog(simpledialog.Dialog):
             
             if due_datetime_str:
                 try:
-                    datetime.strptime(due_datetime_str, '%m/%d/%Y %H:%M')
+                    # Пробуем формат дд.мм.гггг чч:мм
+                    datetime.strptime(due_datetime_str, '%d.%m.%Y %H:%M')
                 except ValueError:
                     try:
-                        # Пробуем другой формат даты
-                        datetime.strptime(due_datetime_str, '%d.%m.%Y %H:%M')
+                        # Пробуем формат мм/дд/гггг чч:мм от DateEntry
+                        datetime.strptime(due_datetime_str, '%m/%d/%Y %H:%M')
                     except ValueError:
                         messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
                         return False
                         
             if reminder_datetime_str:
                 try:
-                    datetime.strptime(reminder_datetime_str, '%m/%d/%Y %H:%M')
+                    # Пробуем формат дд.мм.гггг чч:мм
+                    datetime.strptime(reminder_datetime_str, '%d.%m.%Y %H:%M')
                 except ValueError:
                     try:
-                        # Пробуем другой формат даты
-                        datetime.strptime(reminder_datetime_str, '%d.%m.%Y %H:%M')
+                        # Пробуем формат мм/дд/гггг чч:мм от DateEntry
+                        datetime.strptime(reminder_datetime_str, '%m/%d/%Y %H:%M')
                     except ValueError:
                         messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_datetime_str}. Используйте формат дд.мм.гггг чч:мм")
                         return False
@@ -480,8 +486,24 @@ class TaskDialog(simpledialog.Dialog):
             reminder_date_val = self.reminder_date_picker.get() if hasattr(self, 'reminder_date_picker') else ""
             reminder_time_val = self.reminder_time_entry.get().strip() if hasattr(self, 'reminder_time_entry') else ""
             
-            due_date = f"{due_date_val} {due_time_val}" if due_date_val and due_time_val else None
-            reminder_time = f"{reminder_date_val} {reminder_time_val}" if reminder_date_val and reminder_time_val else None
+            # Преобразуем формат даты из MM/DD/YYYY в DD.MM.YYYY
+            if due_date_val and due_time_val:
+                try:
+                    dt = datetime.strptime(due_date_val, '%m/%d/%Y')
+                    due_date = f"{dt.strftime('%d.%m.%Y')} {due_time_val}"
+                except ValueError:
+                    due_date = f"{due_date_val} {due_time_val}"  # Оставить как есть в случае ошибки
+            else:
+                due_date = None
+            
+            if reminder_date_val and reminder_time_val:
+                try:
+                    dt = datetime.strptime(reminder_date_val, '%m/%d/%Y')
+                    reminder_time = f"{dt.strftime('%d.%m.%Y')} {reminder_time_val}"
+                except ValueError:
+                    reminder_time = f"{reminder_date_val} {reminder_time_val}"  # Оставить как есть в случае ошибки
+            else:
+                reminder_time = None
         else:
             # Получаем значения из старых полей
             due_date = self.due_entry.get().strip() if self.due_entry.get().strip() else None
