@@ -78,6 +78,41 @@ def delete_task(task_id):
     save_tasks(tasks)
     return redirect(url_for('index'))
 
+@app.route('/reminders')
+def check_reminders():
+    """Проверка напоминаний"""
+    tasks = load_tasks()
+    now = datetime.now()
+    triggered_reminders = []
+    
+    for task in tasks:
+        if task['reminder_time'] and not task['completed']:
+            try:
+                # Попробуем преобразовать дату из строки в datetime
+                reminder_dt = datetime.fromisoformat(task['reminder_time'].replace('Z', '+00:00'))
+                if reminder_dt <= now:
+                    triggered_reminders.append(task)
+            except ValueError:
+                try:
+                    # Попробуем другой формат даты
+                    reminder_dt = datetime.strptime(task['reminder_time'], '%d.%m.%Y %H:%M')
+                    if reminder_dt <= now:
+                        triggered_reminders.append(task)
+                except ValueError:
+                    pass
+    
+    # Отмечаем найденные напоминания как выполненные
+    for task in triggered_reminders:
+        task['completed'] = True
+    
+    if triggered_reminders:
+        save_tasks(tasks)
+    
+    return jsonify({
+        'reminders': triggered_reminders,
+        'count': len(triggered_reminders)
+    })
+
 @app.route('/api/tasks')
 def api_tasks():
     tasks = load_tasks()
@@ -207,29 +242,40 @@ if __name__ == '__main__':
             background: #0056b3;
         }
         
-        .btn-edit {
-            background: #28a745;
-        }
-        
-        .btn-edit:hover {
+        .btn-edit, .btn-edit:hover {
             background: #1e7e34;
+            color: white;
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
         
-        .btn-delete {
-            background: #dc3545;
-        }
-        
-        .btn-delete:hover {
+        .btn-delete, .btn-delete:hover {
             background: #c82333;
+            color: white;
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
         
-        .btn-toggle {
-            background: #ffc107;
-            color: black;
-        }
-        
-        .btn-toggle:hover {
+        .btn-toggle, .btn-toggle:hover {
             background: #e0a800;
+            color: white;
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
         
         table {
@@ -292,6 +338,45 @@ if __name__ == '__main__':
         
         .status-pending {
             color: #dc3545;
+        }
+        
+        /* Улучшенный стиль для кнопок */
+        .btn {
+            color: white !important;
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .btn-edit {
+            background: #28a745;
+        }
+        
+        .btn-edit:hover {
+            background: #1e7e34;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+        }
+        
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        
+        .btn-toggle {
+            background: #ffc107;
+            color: #212529 !important;
+        }
+        
+        .btn-toggle:hover {
+            background: #e0a800;
         }
     </style>
 </head>
@@ -421,6 +506,34 @@ if __name__ == '__main__':
         function cancelEdit() {
             document.getElementById('edit-form').style.display = 'none';
         }
+        
+        // Функция проверки напоминаний
+        function checkReminders() {
+            fetch('/reminders')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        // Проигрываем звук уведомления
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFd2xqZ2RjYF1bWVhXVlVUU1JQT05MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA==');
+                        audio.play().catch(e => console.log("Audio play failed:", e));
+                        
+                        // Показываем уведомление
+                        alert('🔔 Напоминание: ' + data.reminders.length + ' задач(и) требуют внимания!');
+                        
+                        // Перезагружаем страницу для обновления статусов
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Ошибка проверки напоминаний:', error));
+        }
+        
+        // Проверяем напоминания каждые 60 секунд
+        setInterval(checkReminders, 60000);
+        
+        // Проверяем напоминания сразу после загрузки страницы
+        window.onload = function() {
+            setTimeout(checkReminders, 2000); // Подождем 2 секунды перед первой проверкой
+        };
     </script>
 </body>
 </html>'''

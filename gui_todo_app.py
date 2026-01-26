@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, simpledialog
 import json
 import os
 from datetime import datetime, timedelta
+import uuid
 
 
 class TodoApp:
@@ -10,6 +11,9 @@ class TodoApp:
         self.root = root
         self.root.title("ToDo List с Напоминаниями")
         self.root.geometry("800x600")
+        
+        # Настройка минимального размера окна
+        self.root.minsize(600, 400)
 
         # Имя файла для сохранения данных
         self.data_file = "todo_data.json"
@@ -22,6 +26,49 @@ class TodoApp:
         
         # Обновление списка задач
         self.refresh_task_list()
+        
+        # Запуск проверки напоминаний
+        self.check_reminders()
+    
+    def check_reminders(self):
+        """Проверка напоминаний и отображение уведомлений"""
+        now = datetime.now()
+        triggered_reminders = []
+        
+        for task in self.tasks:
+            if task['reminder_time'] and not task['completed']:
+                # Преобразуем строку даты в объект datetime
+                try:
+                    reminder_dt = datetime.fromisoformat(task['reminder_time'].replace('Z', '+00:00'))
+                    if reminder_dt <= now:
+                        triggered_reminders.append(task)
+                except ValueError:
+                    try:
+                        # Попробуем другой формат даты
+                        reminder_dt = datetime.strptime(task['reminder_time'], '%d.%m.%Y %H:%M')
+                        if reminder_dt <= now:
+                            triggered_reminders.append(task)
+                    except ValueError:
+                        pass
+        
+        # Показываем уведомления для просроченных напоминаний
+        for task in triggered_reminders:
+            task['completed'] = True
+            self.show_notification(f"Напоминание: {task['title']}", "Время выполнить задачу!")
+        
+        if triggered_reminders:
+            self.save_data()
+            self.refresh_task_list()
+        
+        # Запланировать следующую проверку через 1 минуту
+        self.root.after(60000, self.check_reminders)
+    
+    def show_notification(self, title, message):
+        """Показать всплывающее уведомление с звуком"""
+        # Проигрываем системный звук уведомления
+        self.root.bell()
+        # Показываем всплывающее окно
+        messagebox.showinfo(title, message)
     
     def load_data(self):
         """Загрузка данных из файла"""
@@ -65,22 +112,28 @@ class TodoApp:
         # Определение заголовков
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
         
-        # Настройка ширины колонок
-        self.tree.column("#", width=30)
-        self.tree.column("Название", width=150)
-        self.tree.column("Описание", width=200)
-        self.tree.column("Выполнить до", width=120)
-        self.tree.column("Напомнить", width=120)
-        self.tree.column("Статус", width=80)
+        # Настройка ширины колонок с возможностью изменения
+        self.tree.column("#", width=50, stretch=tk.NO)
+        self.tree.column("Название", width=150, stretch=tk.YES)
+        self.tree.column("Описание", width=200, stretch=tk.YES)
+        self.tree.column("Выполнить до", width=120, stretch=tk.NO)
+        self.tree.column("Напомнить", width=120, stretch=tk.NO)
+        self.tree.column("Статус", width=80, stretch=tk.NO)
         
         # Добавление прокрутки
         scrollbar_y = ttk.Scrollbar(center_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar_y.set)
+        scrollbar_x = ttk.Scrollbar(center_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
         
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+        # Упаковка виджетов с правильным расположением
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar_y.grid(row=0, column=1, sticky="ns")
+        scrollbar_x.grid(row=1, column=0, sticky="ew")
+        
+        # Настройка веса сетки для растягивания
+        center_frame.grid_rowconfigure(0, weight=1)
+        center_frame.grid_columnconfigure(0, weight=1)
         
         # Нижняя часть - информация
         bottom_frame = ttk.Frame(self.root)
@@ -189,19 +242,30 @@ class TaskDialog(simpledialog.Dialog):
         # Поля ввода
         ttk.Label(master, text="Название:").grid(row=0, column=0, sticky=tk.W, pady=2)
         self.title_entry = ttk.Entry(master, width=50)
-        self.title_entry.grid(row=0, column=1, pady=2, padx=(10, 0))
+        self.title_entry.grid(row=0, column=1, pady=2, padx=(10, 0), sticky="ew")
         
         ttk.Label(master, text="Описание:").grid(row=1, column=0, sticky=tk.W, pady=2)
-        self.desc_text = tk.Text(master, width=50, height=4)
-        self.desc_text.grid(row=1, column=1, pady=2, padx=(10, 0))
+        self.desc_frame = ttk.Frame(master)
+        self.desc_frame.grid(row=1, column=1, pady=2, padx=(10, 0), sticky="nsew")
+        
+        self.desc_text = tk.Text(self.desc_frame, width=50, height=4)
+        desc_scrollbar = ttk.Scrollbar(self.desc_frame, orient=tk.VERTICAL, command=self.desc_text.yview)
+        self.desc_text.configure(yscrollcommand=desc_scrollbar.set)
+        
+        self.desc_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        desc_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         ttk.Label(master, text="Выполнить до (дд.мм.гггг чч:мм):").grid(row=2, column=0, sticky=tk.W, pady=2)
         self.due_entry = ttk.Entry(master, width=50)
-        self.due_entry.grid(row=2, column=1, pady=2, padx=(10, 0))
+        self.due_entry.grid(row=2, column=1, pady=2, padx=(10, 0), sticky="ew")
         
         ttk.Label(master, text="Напомнить (дд.мм.гггг чч:мм):").grid(row=3, column=0, sticky=tk.W, pady=2)
         self.reminder_entry = ttk.Entry(master, width=50)
-        self.reminder_entry.grid(row=3, column=1, pady=2, padx=(10, 0))
+        self.reminder_entry.grid(row=3, column=1, pady=2, padx=(10, 0), sticky="ew")
+        
+        # Настройка веса для растягивания
+        master.columnconfigure(1, weight=1)
+        master.rowconfigure(1, weight=1)
         
         # Заполнение полей если задача передана
         if self.task:
@@ -242,7 +306,6 @@ class TaskDialog(simpledialog.Dialog):
             }
         else:
             # Новая задача
-            import uuid
             self.result = {
                 'id': str(uuid.uuid4()),
                 'title': title,

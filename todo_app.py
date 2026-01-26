@@ -11,8 +11,8 @@ from typing import List, Dict, Optional
 class Task:
     """Класс для представления задачи"""
     
-    def __init__(self, title: str, description: str = "", due_date: Optional[datetime.datetime] = None, reminder_time: Optional[datetime.datetime] = None):
-        self.id = id(self)  # Простой способ генерации ID
+    def __init__(self, title: str, description: str = "", due_date: Optional[datetime.datetime] = None, reminder_time: Optional[datetime.datetime] = None, task_id: Optional[int] = None):
+        self.id = task_id if task_id is not None else id(self)  # Используем переданный ID или генерируем новый
         self.title = title
         self.description = description
         self.due_date = due_date
@@ -35,12 +35,14 @@ class Task:
     @classmethod
     def from_dict(cls, data: Dict):
         """Создать задачу из словаря"""
-        task = cls.__new__(cls)
-        task.id = data['id']
-        task.title = data['title']
-        task.description = data['description']
-        task.due_date = datetime.datetime.fromisoformat(data['due_date']) if data['due_date'] else None
-        task.reminder_time = datetime.datetime.fromisoformat(data['reminder_time']) if data['reminder_time'] else None
+        task = cls(
+            title=data['title'],
+            description=data['description'],
+            due_date=datetime.datetime.fromisoformat(data['due_date']) if data['due_date'] else None,
+            reminder_time=datetime.datetime.fromisoformat(data['reminder_time']) if data['reminder_time'] else None,
+            task_id=data['id']
+        )
+        # Устанавливаем дополнительные атрибуты
         task.completed = data['completed']
         task.created_at = datetime.datetime.fromisoformat(data['created_at'])
         return task
@@ -104,9 +106,9 @@ class TodoList:
         upcoming = []
         
         for task in self.tasks:
-            if task.reminder_time and task.reminder_time >= now and not task.completed:
-                if (task.reminder_time - now).total_seconds() <= 3600:  # В течение часа
-                    upcoming.append(task)
+            if task.reminder_time and task.reminder_time <= now and not task.completed:
+                # Напоминание настало
+                upcoming.append(task)
         
         return upcoming
     
@@ -158,6 +160,15 @@ def main():
     
     print("Добро пожаловать в приложение ToDo с напоминаниями!")
     
+    # Проверяем напоминания при запуске
+    upcoming = todo_list.get_upcoming_reminders()
+    if upcoming:
+        print("\n🔔 НАПОМИНАНИЯ:")
+        for task in upcoming:
+            print(f"⚠️  Напоминание: {task.title}")
+            task.completed = True  # Отмечаем задачу как выполненную при напоминании
+        print("Все напоминания отмечены как выполненные!\n")
+    
     while True:
         print("\nВыберите действие:")
         print("1. Добавить задачу")
@@ -204,9 +215,11 @@ def main():
         elif choice == "5":
             upcoming = todo_list.get_upcoming_reminders()
             if upcoming:
-                print("\nБлижайшие напоминания:")
+                print("\n🔔 Ближайшие напоминания:")
                 for task in upcoming:
-                    print(f"- {task} (напоминание: {task.reminder_time.strftime('%d.%m.%Y %H:%M')})")
+                    print(f"⚠️  Напоминание: {task.title}")
+                    task.completed = True  # Отмечаем задачу как выполненную при напоминании
+                print("Все напоминания отмечены как выполненные!")
             else:
                 print("Нет ближайших напоминаний.")
         
