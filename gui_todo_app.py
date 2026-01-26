@@ -47,20 +47,19 @@ class TodoApp:
                     continue  # Пропускаем, если уже показывали уведомление
                 
                 # Пытаемся распознать формат даты
+                reminder_dt = None
                 try:
                     reminder_dt = datetime.fromisoformat(task['reminder_time'].replace('Z', '+00:00'))
-                    if reminder_dt <= now:
-                        triggered_reminders.append(task)
-                        task['reminder_shown'] = True  # Отмечаем, что уведомление было показано
                 except ValueError:
                     try:
                         # Пробуем другой формат даты
                         reminder_dt = datetime.strptime(task['reminder_time'], '%d.%m.%Y %H:%M')
-                        if reminder_dt <= now:
-                            triggered_reminders.append(task)
-                            task['reminder_shown'] = True  # Отмечаем, что уведомление было показано
                     except ValueError:
                         pass
+                
+                if reminder_dt and reminder_dt <= now:
+                    triggered_reminders.append(task)
+                    task['reminder_shown'] = True  # Отмечаем, что уведомление было показано
         
         # Показываем уведомления для просроченных напоминаний
         for task in triggered_reminders:
@@ -86,7 +85,14 @@ class TodoApp:
         if os.path.exists(self.data_file):
             try:
                 with open(self.data_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    tasks = json.load(f)
+                
+                # Ensure all tasks have the 'reminder_shown' field initialized
+                for task in tasks:
+                    if 'reminder_shown' not in task:
+                        task['reminder_shown'] = False
+                        
+                return tasks
             except Exception as e:
                 print(f"Ошибка загрузки данных: {e}")
                 return []
@@ -566,7 +572,8 @@ class TaskDialog(simpledialog.Dialog):
                 'description': description,
                 'due_date': due_date,
                 'reminder_time': reminder_time,
-                'completed': self.task['completed']
+                'completed': self.task['completed'],
+                'reminder_shown': self.task.get('reminder_shown', False)
             }
         else:
             # Новая задача
@@ -576,7 +583,8 @@ class TaskDialog(simpledialog.Dialog):
                 'description': description,
                 'due_date': due_date,
                 'reminder_time': reminder_time,
-                'completed': False
+                'completed': False,
+                'reminder_shown': False
             }
 
     def apply_selection_style(self):
