@@ -13,7 +13,7 @@ class TodoApp:
         self.root.geometry("800x600")
         
         # Настройка минимального размера окна
-        self.root.minsize(600, 400)
+        self.root.minsize(800, 600)
 
         # Имя файла для сохранения данных
         self.data_file = "todo_data.json"
@@ -53,7 +53,6 @@ class TodoApp:
         
         # Показываем уведомления для просроченных напоминаний
         for task in triggered_reminders:
-            task['completed'] = True
             self.show_notification(f"Напоминание: {task['title']}", "Время выполнить задачу!")
         
         if triggered_reminders:
@@ -99,7 +98,8 @@ class TodoApp:
         ttk.Button(top_frame, text="Добавить задачу", command=self.add_task).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(top_frame, text="Редактировать задачу", command=self.edit_task).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(top_frame, text="Удалить задачу", command=self.delete_task).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(top_frame, text="Отметить как выполненное", command=self.mark_completed).pack(side=tk.LEFT, padx=(0, 5))
+        self.mark_button = ttk.Button(top_frame, text="Отметить как выполненное", command=self.mark_completed)
+        self.mark_button.pack(side=tk.LEFT, padx=(0, 5))
         
         # Средняя часть - список задач
         center_frame = ttk.Frame(self.root)
@@ -117,8 +117,8 @@ class TodoApp:
         self.tree.column("#", width=50, stretch=tk.NO)
         self.tree.column("Название", width=150, stretch=tk.YES)
         self.tree.column("Описание", width=200, stretch=tk.YES)
-        self.tree.column("Выполнить до", width=120, stretch=tk.NO)
-        self.tree.column("Напомнить", width=120, stretch=tk.NO)
+        self.tree.column("Выполнить до", width=120, stretch=tk.YES)
+        self.tree.column("Напомнить", width=120, stretch=tk.YES)
         self.tree.column("Статус", width=80, stretch=tk.NO)
         
         # Добавление прокрутки
@@ -144,6 +144,7 @@ class TodoApp:
         
         # Привязка события двойного клика к редактированию задачи
         self.tree.bind("<Double-1>", lambda event: self.edit_task())
+        self.tree.bind("<<TreeviewSelect>>", lambda event: self.update_mark_button_text())
     
     def refresh_task_list(self):
         """Обновление списка задач в TreeView"""
@@ -174,6 +175,9 @@ class TodoApp:
         pending_tasks = total_tasks - completed_tasks
         
         self.status_label.config(text=f"Всего задач: {total_tasks} | Выполнено: {completed_tasks} | Не выполнено: {pending_tasks}")
+        
+        # Обновляем текст кнопки выполнения в зависимости от выделенной задачи
+        self.update_mark_button_text()
     
     def add_task(self):
         """Добавление новой задачи"""
@@ -215,6 +219,20 @@ class TodoApp:
                 self.save_data()
                 self.refresh_task_list()
     
+    def update_mark_button_text(self):
+        """Обновление текста кнопки выполнения в зависимости от выделенной задачи"""
+        selected_item = self.tree.selection()
+        if selected_item:
+            index = int(self.tree.item(selected_item)['values'][0]) - 1
+            if 0 <= index < len(self.tasks):
+                task = self.tasks[index]
+                if task['completed']:
+                    self.mark_button.config(text="Отменить выполнение")
+                else:
+                    self.mark_button.config(text="Отметить как выполненное")
+        else:
+            self.mark_button.config(text="Отметить как выполненное")
+
     def mark_completed(self):
         """Отметка задачи как выполненной"""
         selected_item = self.tree.selection()
@@ -284,6 +302,33 @@ class TaskDialog(simpledialog.Dialog):
         if not title:
             messagebox.showerror("Ошибка", "Название задачи не может быть пустым")
             return False
+            
+        # Проверяем формат дат, если они введены
+        due_date = self.due_entry.get().strip()
+        reminder_time = self.reminder_entry.get().strip()
+        
+        if due_date:
+            try:
+                datetime.strptime(due_date, '%d.%m.%Y %H:%M')
+            except ValueError:
+                try:
+                    # Пробуем ISO формат
+                    datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+                except ValueError:
+                    messagebox.showerror("Ошибка", f"Неверный формат даты выполнения: {due_date}. Используйте формат дд.мм.гггг чч:мм")
+                    return False
+                    
+        if reminder_time:
+            try:
+                datetime.strptime(reminder_time, '%d.%m.%Y %H:%M')
+            except ValueError:
+                try:
+                    # Пробуем ISO формат
+                    datetime.fromisoformat(reminder_time.replace('Z', '+00:00'))
+                except ValueError:
+                    messagebox.showerror("Ошибка", f"Неверный формат времени напоминания: {reminder_time}. Используйте формат дд.мм.гггг чч:мм")
+                    return False
+        
         return True
     
     def apply(self):
