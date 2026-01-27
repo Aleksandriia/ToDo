@@ -5,6 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToDo List с Напоминаниями</title>
     <style>
+        :root {
+            --primary-color: #007bff;
+            --accent-color: #17a2b8; /* Голубой цвет как у кнопки добавления */
+            --bg-light: #f5f5f5;
+            --bg-card: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --completed-color: #6c757d;
+            --status-completed: #28a745;
+            --status-pending: #dc3545;
+            --header-bg: white;
+            --hover-bg: #f5f5f5;
+        }
+
+        .dark-theme {
+            --primary-color: #0d6efd;
+            --accent-color: #17a2b8; /* Голубой акцентный цвет */
+            --bg-light: #121212;
+            --bg-card: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaa;
+            --border-color: #444;
+            --completed-color: #888;
+            --status-completed: #20c997;
+            --status-pending: #ff6b6b;
+            --header-bg: #1e1e1e;
+            --hover-bg: #2a2a2a;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,11 +46,13 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
         }
         
         header {
-            background: white;
+            background: var(--header-bg);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -29,7 +61,24 @@
         }
         
         h1 {
-            color: #333;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .container {
@@ -45,36 +94,69 @@
         }
         
         .form-container {
-            background: white;
+            background: var(--bg-card);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .tasks-container {
-            background: white;
+            background: var(--bg-card);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
+        .search-filter-container {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
         .form-group {
             margin-bottom: 15px;
+        }
+
+        .search-group, .filter-group, .sort-group {
+            margin-bottom: 0;
         }
         
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #555;
+            color: var(--text-primary);
+        }
+
+        .inline-label {
+            display: inline;
+            margin: 0 10px 0 0;
+            font-weight: normal;
         }
         
         input, textarea, select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 5px;
             font-size: 16px;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .search-input {
+            width: auto;
+            flex-grow: 1;
+            min-width: 200px;
         }
         
         textarea {
@@ -83,7 +165,7 @@
         }
         
         button {
-            background: #007bff;
+            background: var(--accent-color); /* Голубой цвет как акцент */
             color: white;
             padding: 10px 20px;
             border: none;
@@ -93,7 +175,7 @@
         }
         
         button:hover {
-            background: #0056b3;
+            opacity: 0.9;
         }
         
         .btn-edit, .btn-edit:hover {
@@ -140,21 +222,22 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
         
         th {
-            background-color: #f8f9fa;
+            background-color: var(--hover-bg);
             font-weight: bold;
         }
         
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: var(--hover-bg);
         }
         
         .completed {
             text-decoration: line-through;
-            color: #6c757d;
+            color: var(--completed-color);
         }
         
         .task-actions {
@@ -163,7 +246,7 @@
         }
         
         .task-item {
-            background: white;
+            background: var(--bg-card);
             padding: 15px;
             margin-bottom: 10px;
             border-radius: 5px;
@@ -177,21 +260,21 @@
         
         .task-description {
             margin-bottom: 10px;
-            color: #666;
+            color: var(--text-secondary);
         }
         
         .task-meta {
             font-size: 0.9em;
-            color: #888;
+            color: var(--text-secondary);
         }
         
         .status-completed {
-            color: #28a745;
+            color: var(--status-completed);
             font-weight: bold;
         }
         
         .status-pending {
-            color: #dc3545;
+            color: var(--status-pending);
         }
         
         /* Улучшенный стиль для кнопок */
@@ -238,6 +321,7 @@
     <header>
         <h1>ToDo List с Напоминаниями</h1>
         <p>Управляйте своими задачами и напоминаниями</p>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
     </header>
     
     <div class="container">
@@ -269,47 +353,78 @@
         </div>
         
         <div class="tasks-container">
+            <div class="search-filter-container">
+                <div class="search-filter-row">
+                    <div class="search-group">
+                        <label for="searchInput" class="inline-label">Поиск:</label>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Поиск задач...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="statusFilter" class="inline-label">Фильтр:</label>
+                        <select id="statusFilter">
+                            <option value="all">Все задачи</option>
+                            <option value="pending">Только невыполненные</option>
+                            <option value="completed">Только выполненные</option>
+                        </select>
+                    </div>
+                    
+                    <div class="sort-group">
+                        <label for="sortBy" class="inline-label">Сортировка:</label>
+                        <select id="sortBy">
+                            <option value="default">По умолчанию</option>
+                            <option value="title">По названию</option>
+                            <option value="due_date">По сроку выполнения</option>
+                            <option value="reminder_time">По времени напоминания</option>
+                            <option value="status">По статусу</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <h2>Список задач</h2>
             
-            {% if tasks %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Статус</th>
-                            <th>Название</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for task in tasks %}
-                        <tr>
-                            <td>
-                                <span class="status-{{ 'completed' if task.completed else 'pending' }}">
-                                    {{ 'Выполнена' if task.completed else 'Не выполнена' }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="{{ 'completed' if task.completed else '' }}">
-                                    <strong>{{ task.title }}</strong><br>
-                                    <small>{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</small><br>
-                                    {% if task.due_date %}<small>Срок: {{ task.due_date }}</small>{% endif %}
-                                    {% if task.reminder_time %}<small>Напоминание: {{ task.reminder_time }}</small>{% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="task-actions">
-                                    <a href="/toggle/{{ task.id }}" class="btn btn-toggle">{{ 'Отменить' if task.completed else 'Выполнить' }}</a>
-                                    <a href="#" onclick="fillEditForm('{{ task.id }}', '{{ task.title|e }}', '{{ task.description|e }}', '{{ task.due_date or '' }}', '{{ task.reminder_time or '' }}')" class="btn btn-edit">Изменить</a>
-                                    <a href="/delete/{{ task.id }}" class="btn btn-delete">Удалить</a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>Список задач пуст. Добавьте первую задачу!</p>
-            {% endif %}
+            <div id="tasksContent">
+                {% if tasks %}
+                    <table id="tasksTable">
+                        <thead>
+                            <tr>
+                                <th>Статус</th>
+                                <th>Название</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr data-task-id="{{ task.id }}">
+                                <td>
+                                    <span class="status-{{ 'completed' if task.completed else 'pending' }}">
+                                        {{ 'Выполнена' if task.completed else 'Не выполнена' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="{{ 'completed' if task.completed else '' }}">
+                                        <strong>{{ task.title }}</strong><br>
+                                        <small>{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</small><br>
+                                        {% if task.due_date %}<small>Срок: {{ task.due_date }}</small>{% endif %}
+                                        {% if task.reminder_time %}<small>Напоминание: {{ task.reminder_time }}</small>{% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="task-actions">
+                                        <a href="/toggle/{{ task.id }}" class="btn btn-toggle">{{ 'Отменить' if task.completed else 'Выполнить' }}</a>
+                                        <a href="#" onclick="fillEditForm('{{ task.id }}', '{{ task.title|e }}', '{{ task.description|e }}', '{{ task.due_date or '' }}', '{{ task.reminder_time or '' }}')" class="btn btn-edit">Изменить</a>
+                                        <a href="/delete/{{ task.id }}" class="btn btn-delete">Удалить</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>Список задач пуст. Добавьте первую задачу!</p>
+                {% endif %}
+            </div>
         </div>
     </div>
     
@@ -346,12 +461,55 @@
     </div>
     
     <script>
+        // Функция переключения темы
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const themeIcon = document.getElementById('themeToggle');
+            if (document.body.classList.contains('dark-theme')) {
+                themeIcon.textContent = '☀️'; // Солнце для светлой темы
+            } else {
+                themeIcon.textContent = '🌙'; // Луна для темной темы
+            }
+            
+            // Сохраняем предпочтение пользователя
+            localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+        
+        // Загружаем сохраненную тему при загрузке страницы
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+            
+            // Инициализируем слушатели для поиска, фильтрации и сортировки
+            document.getElementById('searchInput').addEventListener('input', updateTasksDisplay);
+            document.getElementById('statusFilter').addEventListener('change', updateTasksDisplay);
+            document.getElementById('sortBy').addEventListener('change', updateTasksDisplay);
+            
+            // Запускаем проверку напоминаний
+            setTimeout(checkReminders, 2000); // Подождем 2 секунды перед первой проверкой
+        }
+        
         function fillEditForm(id, title, description, dueDate, reminderTime) {
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-title').value = title;
             document.getElementById('edit-description').value = description;
-            document.getElementById('edit-due_date').value = dueDate.replace(' ', 'T');
-            document.getElementById('edit-reminder_time').value = reminderTime.replace(' ', 'T');
+            // Обработка разных форматов даты
+            let formattedDueDate = dueDate;
+            let formattedReminderTime = reminderTime;
+            
+            if(dueDate && dueDate.includes(' ')) {
+                formattedDueDate = dueDate.replace(' ', 'T');
+            }
+            
+            if(reminderTime && reminderTime.includes(' ')) {
+                formattedReminderTime = reminderTime.replace(' ', 'T');
+            }
+            
+            document.getElementById('edit-due_date').value = formattedDueDate;
+            document.getElementById('edit-reminder_time').value = formattedReminderTime;
             
             document.getElementById('edit-form').style.display = 'block';
             document.getElementById('edit-task-form').action = '/edit/' + id;
@@ -361,33 +519,197 @@
             document.getElementById('edit-form').style.display = 'none';
         }
         
+        // Функция обновления отображения задач (поиск, фильтрация, сортировка)
+        function updateTasksDisplay() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+            
+            // Загружаем все задачи через API
+            fetch('/api/tasks/search?q=' + encodeURIComponent(searchTerm) + 
+                  '&status=' + encodeURIComponent(statusFilter) + 
+                  '&sort=' + encodeURIComponent(sortBy))
+                .then(response => response.json())
+                .then(tasks => {
+                    // Обновляем содержимое таблицы
+                    updateTasksTable(tasks);
+                })
+                .catch(error => console.error('Ошибка при обновлении списка задач:', error));
+        }
+        
+        // Функция обновления таблицы задач
+        function updateTasksTable(tasks) {
+            const tbody = document.querySelector('#tasksTable tbody');
+            if (!tbody) return; // Если таблицы нет, выходим
+            
+            // Очищаем текущие задачи
+            tbody.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.setAttribute('colspan', '3');
+                cell.textContent = 'Нет задач, соответствующих критериям поиска.';
+                row.appendChild(cell);
+                tbody.appendChild(row);
+                return;
+            }
+            
+            // Добавляем задачи в таблицу
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-task-id', task.id);
+                
+                // Статус задачи
+                const statusCell = document.createElement('td');
+                const statusSpan = document.createElement('span');
+                statusSpan.className = `status-${task.completed ? 'completed' : 'pending'}`;
+                statusSpan.textContent = task.completed ? 'Выполнена' : 'Не выполнена';
+                statusCell.appendChild(statusSpan);
+                
+                // Информация о задаче
+                const infoCell = document.createElement('td');
+                const titleDiv = document.createElement('div');
+                if(task.completed) titleDiv.classList.add('completed');
+                
+                const strong = document.createElement('strong');
+                strong.textContent = task.title;
+                
+                const smallDesc = document.createElement('small');
+                const descText = task.description || '';
+                smallDesc.textContent = descText.substring(0, 100) + (descText.length > 100 ? '...' : '');
+                
+                const smallDueDate = document.createElement('small');
+                if(task.due_date) {
+                    smallDueDate.textContent = `Срок: ${task.due_date}`;
+                }
+                
+                const smallReminder = document.createElement('small');
+                if(task.reminder_time) {
+                    smallReminder.textContent = `Напоминание: ${task.reminder_time}`;
+                }
+                
+                titleDiv.appendChild(strong);
+                titleDiv.appendChild(document.createElement('br'));
+                titleDiv.appendChild(smallDesc);
+                if(task.due_date) {
+                    titleDiv.appendChild(document.createElement('br'));
+                    titleDiv.appendChild(smallDueDate);
+                }
+                if(task.reminder_time) {
+                    titleDiv.appendChild(document.createElement('br'));
+                    titleDiv.appendChild(smallReminder);
+                }
+                
+                infoCell.appendChild(titleDiv);
+                
+                // Кнопки действий
+                const actionsCell = document.createElement('td');
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'task-actions';
+                
+                const toggleBtn = document.createElement('a');
+                toggleBtn.href = `/toggle/${task.id}`;
+                toggleBtn.className = 'btn btn-toggle';
+                toggleBtn.textContent = task.completed ? 'Отменить' : 'Выполнить';
+                
+                const editBtn = document.createElement('a');
+                editBtn.href = '#';
+                editBtn.className = 'btn btn-edit';
+                editBtn.textContent = 'Изменить';
+                editBtn.onclick = function() {
+                    fillEditForm(task.id, task.title, task.description, task.due_date || '', task.reminder_time || '');
+                    return false;
+                };
+                
+                const deleteBtn = document.createElement('a');
+                deleteBtn.href = `/delete/${task.id}`;
+                deleteBtn.className = 'btn btn-delete';
+                deleteBtn.textContent = 'Удалить';
+                
+                actionsDiv.appendChild(toggleBtn);
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(deleteBtn);
+                actionsCell.appendChild(actionsDiv);
+                
+                row.appendChild(statusCell);
+                row.appendChild(infoCell);
+                row.appendChild(actionsCell);
+                
+                tbody.appendChild(row);
+            });
+        }
+        
         // Функция проверки напоминаний
         function checkReminders() {
             fetch('/reminders')
                 .then(response => response.json())
                 .then(data => {
                     if (data.count > 0) {
-                        // Проигрываем звук уведомления
-                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFd2xqZ2RjYF1bWVhXVlVUU1JQT05MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA==');
-                        audio.play().catch(e => console.log("Audio play failed:", e));
+                        // Проигрываем улучшенный звук уведомления
+                        playNotificationSound();
                         
                         // Показываем уведомление
-                        alert('🔔 Напоминание: ' + data.reminders.length + ' задач(и) требуют внимания!');
+                        showNotification('🔔 Напоминание: ' + data.reminders.length + ' задач(и) требуют внимания!');
                         
-                        // Перезагружаем страницу для обновления статусов
-                        location.reload();
+                        // Обновляем список задач без перезагрузки страницы
+                        updateTasksDisplay();
                     }
                 })
                 .catch(error => console.error('Ошибка проверки напоминаний:', error));
         }
         
+        // Функция воспроизведения звука уведомления
+        function playNotificationSound() {
+            // Создаем AudioContext для генерации звука
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800; // Частота звука
+                gainNode.gain.value = 0.3; // Громкость
+                
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 1);
+                
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 1000);
+            } catch (e) {
+                console.log("Web Audio API недоступен, используем fallback:", e);
+                // Fallback: пробуем использовать стандартный звук браузера
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFd2xqZ2RjYF1bWVhXVlVUU1JQT05MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA==');
+                audio.play().catch(e => console.log("Fallback audio play failed:", e));
+            }
+        }
+        
+        // Функция показа уведомления
+        function showNotification(message) {
+            // Проверяем поддержку уведомлений браузером
+            if ("Notification" in window) {
+                // Запрашиваем разрешение на показ уведомлений
+                if (Notification.permission === "granted") {
+                    new Notification(message);
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(function(permission) {
+                        if (permission === "granted") {
+                            new Notification(message);
+                        }
+                    });
+                }
+            }
+            
+            // Также показываем alert как fallback
+            alert(message);
+        }
+        
         // Проверяем напоминания каждые 60 секунд
         setInterval(checkReminders, 60000);
-        
-        // Проверяем напоминания сразу после загрузки страницы
-        window.onload = function() {
-            setTimeout(checkReminders, 2000); // Подождем 2 секунды перед первой проверкой
-        };
     </script>
 </body>
 </html>
