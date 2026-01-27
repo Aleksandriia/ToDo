@@ -26,6 +26,48 @@ def index():
     tasks = load_tasks()
     return render_template('index.html', tasks=tasks)
 
+
+@app.route('/api/tasks/search')
+def search_tasks():
+    """API endpoint для поиска и фильтрации задач"""
+    tasks = load_tasks()
+    
+    # Получаем параметры запроса
+    search_query = request.args.get('q', '').lower()
+    status_filter = request.args.get('status', 'all')
+    sort_by = request.args.get('sort', 'default')
+    
+    # Фильтруем задачи по поисковому запросу
+    if search_query:
+        tasks = [task for task in tasks if search_query in task['title'].lower() or 
+                 (task['description'] and search_query in task['description'].lower())]
+    
+    # Фильтруем по статусу
+    if status_filter != 'all':
+        if status_filter == 'completed':
+            tasks = [task for task in tasks if task['completed']]
+        elif status_filter == 'pending':
+            tasks = [task for task in tasks if not task['completed']]
+    
+    # Сортируем задачи
+    if sort_by == 'title':
+        tasks = sorted(tasks, key=lambda x: x['title'].lower())
+    elif sort_by == 'due_date':
+        tasks = sorted(tasks, key=lambda x: (x['due_date'] or ''), reverse=True)
+    elif sort_by == 'reminder_time':
+        tasks = sorted(tasks, key=lambda x: (x['reminder_time'] or ''), reverse=True)
+    elif sort_by == 'status':
+        tasks = sorted(tasks, key=lambda x: x['completed'])  # False (not completed) будет первым
+    
+    return jsonify(tasks)
+
+
+@app.route('/api/tasks/all')
+def get_all_tasks():
+    """API endpoint для получения всех задач без фильтрации"""
+    tasks = load_tasks()
+    return jsonify(tasks)
+
 @app.route('/add', methods=['POST'])
 def add_task():
     tasks = load_tasks()
