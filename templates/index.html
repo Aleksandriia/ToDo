@@ -137,7 +137,11 @@
             margin-bottom: 20px;
         }
 
-        .search-filter-row {
+        .search-section {
+            margin-bottom: 15px;
+        }
+        
+        .filter-sort-section {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
@@ -186,7 +190,7 @@
         .search-input {
             width: auto;
             flex-grow: 1;
-            min-width: 300px;
+            min-width: 500px;
             background: var(--glass-bg);
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
@@ -330,11 +334,12 @@
         }
         
         .btn-edit {
-            background: #28a745;
+            background: #ffc107;
+            color: #212529 !important;
         }
         
         .btn-edit:hover {
-            background: #1e7e34;
+            background: #e0a800;
         }
         
         .btn-delete {
@@ -346,12 +351,12 @@
         }
         
         .btn-toggle {
-            background: #ffc107;
-            color: #212529 !important;
+            background: #28a745;
+            color: white !important;
         }
         
         .btn-toggle:hover {
-            background: #e0a800;
+            background: #1e7e34;
         }
     </style>
 </head>
@@ -392,12 +397,14 @@
         
         <div class="tasks-container">
             <div class="search-filter-container">
-                <div class="search-filter-row">
+                <div class="search-section">
                     <div class="search-group">
                         <label for="searchInput" class="inline-label">Поиск:</label>
                         <input type="text" id="searchInput" class="search-input" placeholder="Поиск задач...">
                     </div>
-                    
+                </div>
+                
+                <div class="filter-sort-section">
                     <div class="filter-group">
                         <label for="statusFilter" class="inline-label">Фильтр:</label>
                         <select id="statusFilter">
