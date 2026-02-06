@@ -9,30 +9,36 @@
             --primary-color: #007bff;
             --accent-color: #17a2b8; /* Голубой цвет как у кнопки добавления */
             --bg-light: #f5f5f5;
-            --bg-card: white;
+            --bg-card: rgba(255, 255, 255, 0.8);
             --text-primary: #333;
             --text-secondary: #666;
             --border-color: #ddd;
             --completed-color: #6c757d;
             --status-completed: #28a745;
             --status-pending: #dc3545;
-            --header-bg: white;
+            --header-bg: rgba(255, 255, 255, 0.8);
             --hover-bg: #f5f5f5;
+            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
         }
 
         .dark-theme {
             --primary-color: #0d6efd;
             --accent-color: #17a2b8; /* Голубой акцентный цвет */
             --bg-light: #121212;
-            --bg-card: #1e1e1e;
+            --bg-card: rgba(30, 30, 30, 0.8);
             --text-primary: #e0e0e0;
             --text-secondary: #aaa;
             --border-color: #444;
             --completed-color: #888;
             --status-completed: #20c997;
             --status-pending: #ff6b6b;
-            --header-bg: #1e1e1e;
+            --header-bg: rgba(30, 30, 30, 0.8);
             --hover-bg: #2a2a2a;
+            --glass-bg: rgba(31, 38, 135, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -52,10 +58,13 @@
         }
         
         header {
-            background: var(--header-bg);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: var(--glass-shadow);
             margin-bottom: 20px;
             text-align: center;
         }
@@ -68,8 +77,11 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: var(--accent-color);
-            color: white;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             border: none;
             border-radius: 50%;
             width: 40px;
@@ -79,6 +91,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: var(--glass-shadow);
         }
         
         .container {
@@ -94,24 +107,33 @@
         }
         
         .form-container {
-            background: var(--bg-card);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: var(--glass-shadow);
         }
         
         .tasks-container {
-            background: var(--bg-card);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: var(--glass-shadow);
         }
 
         .search-filter-container {
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: var(--glass-shadow);
             margin-bottom: 20px;
         }
 
@@ -152,11 +174,24 @@
             background-color: var(--bg-light);
             color: var(--text-primary);
         }
+        
+        select {
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
 
         .search-input {
             width: auto;
             flex-grow: 1;
-            min-width: 200px;
+            min-width: 300px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
         }
         
         textarea {
@@ -246,11 +281,14 @@
         }
         
         .task-item {
-            background: var(--bg-card);
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
             padding: 15px;
             margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: var(--glass-shadow);
         }
         
         .task-title {
